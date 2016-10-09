@@ -10,6 +10,11 @@
 //we want to use the OpenGL renderer, so we include it.
 #include <Paper/OpenGL/GLRenderer.hpp>
 
+#include <Crunch/Randomizer.hpp>
+
+#include <Stick/Thread.hpp>
+
+
 //we want to use the paper, brick, crunch & stick namespaces
 using namespace paper; // paper namespace
 using namespace brick; // brick namespace for entity / component things
@@ -43,6 +48,9 @@ int main(int _argc, const char * _args[])
         // create the opengl renderer for the document
         opengl::GLRenderer renderer(doc);
 
+        Path bg = doc.createRectangle(Vec2f(0), Vec2f(800, 600));
+        bg.setFill(ColorRGBA(0.3, 0.3, 0.3, 1.0));
+
         //create a simple donut from two circles
         Path circle = doc.createCircle(Vec2f(400, 300.0), 60.0);
         circle.setFill(ColorRGBA(1.0, 1.0, 0.0, 1.0));
@@ -53,6 +61,27 @@ int main(int _argc, const char * _args[])
         Path innerCircle = circle.clone();
         innerCircle.scale(0.5);
         circle.addChild(innerCircle);
+
+
+        Path rct = doc.createRectangle(Vec2f(100, 100), Vec2f(200, 300));
+        rct.setFill(ColorRGBA(1.0, 0.0, 0.0, 1.0));
+
+        Path arc = doc.createPath();
+        arc.addPoint(Vec2f(200, 300));
+        arc.arcTo(Vec2f(300, 300), Vec2f(100.0, 50.0), crunch::Constants<Float32>::pi() * 0.25, false, false);
+        arc.setFill(ColorRGBA(1, 1, 0, 1));
+
+        //arc.rotate(Constants<Float>::pi() * 0.5);
+        rct.skew(Vec2f(0, Constants<Float>::pi() * 0.1), arc.position());
+
+        //doc.translateTransform(Vec2f());
+
+        Randomizer r;
+        /*for(int i=0; i<10000; ++i)
+        {
+            Path circle = doc.createCircle(Vec2f(r.randomf(0, 800), r.randomf(0, 600)), 10.0);
+            circle.setFill(ColorRGBA(1.0, 1.0, 0.0, 1.0));
+        }*/
 
         // the main loop
         while (!glfwWindowShouldClose(window))
@@ -66,15 +95,12 @@ int main(int _argc, const char * _args[])
             int width, height;
             glfwGetFramebufferSize(window, &width, &height);
             renderer.setViewport(width, height);
+            renderer.setTransform(Mat3f::identity());
 
-            Error err = renderer.draw();
-            if (err)
-            {
-                printf("Error drawing Paper Document, Message: %s, Description: %s\n", err.message().cString(), err.description().cString());
+            auto err = renderer.draw();
+            if(err)
                 return EXIT_FAILURE;
-            }
 
-            // swap the glfw windows buffer & poll the window events
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
